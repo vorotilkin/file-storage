@@ -1,0 +1,24 @@
+grpc:
+  server:
+    address: "localhost:50051"
+
+db:
+  host: db
+  port: 5432
+  user: postgres
+  password: password
+  database: file_storage
+  poolsize: 10
+  sslmode: disable
+
+s3:
+  endpoint:
+  region:
+  bucket:
+  accesskey:
+  secretkey:
+  usessl:
+
+migration:
+  path: "./schema/migrations"
+  needMigration: true

@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package files;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "/proto";
+
+service FileStorageService {
+  // 1) Регистрация + presigned PUT
+  rpc RegisterFile(RegisterFileRequest) returns (RegisterFileResponse);
+
+  // 2) Выдать ссылку на скачивание (presigned GET)
+  rpc DownloadLink(DownloadLinkRequest) returns (DownloadLinkResponse);
+}
+
+// Метаданные файла
+message File {
+  int32 id = 1;            // UUID
+  string filename = 2;
+  string content_type = 3;
+  string bucket = 4;
+  string object_key = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp uploaded_at = 7;
+}
+
+// Запрос регистрации файла → выдаём URL для загрузки
+message RegisterFileRequest {
+  string filename = 1;      // исходное имя (можно пустое)
+  string content_type = 2;  // например "application/pdf"
+}
+
+message RegisterFileResponse {
+  int32 file_id = 1;
+  string put_url = 2;       // presigned PUT
+}
+
+// Выдать ссылку для скачивания по file_id
+message DownloadLinkRequest {
+  int32 file_id = 1;
+}
+
+message DownloadLinkResponse {
+  string url = 1;       // presigned GET
+}
