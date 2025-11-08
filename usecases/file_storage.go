@@ -27,7 +27,8 @@ type FileStorageServer struct {
 
 func (s *FileStorageServer) RegisterFile(ctx context.Context, request *proto.RegisterFileRequest) (*proto.RegisterFileResponse, error) {
 	filename := request.GetFilename()
-	objectKey := models.CreateObjectKey(filename).String()
+	entityName := request.GetEntityName()
+	objectKey := models.CreateObjectKey(filename, entityName).String()
 
 	createdFile, err := s.filesRepo.Create(ctx, models.CreateFileRequest{
 		Filename:    filename,

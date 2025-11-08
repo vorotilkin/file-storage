@@ -1,6 +1,11 @@
 package models
 
-import "github.com/google/uuid"
+import (
+	"strings"
+
+	"github.com/google/uuid"
+	"github.com/samber/lo"
+)
 
 type ObjectKey string
 
@@ -8,8 +13,10 @@ func (k ObjectKey) String() string {
 	return string(k)
 }
 
-func CreateObjectKey(filename string) ObjectKey {
+func CreateObjectKey(filename, entityName string) ObjectKey {
 	id := uuid.New()
 
-	return ObjectKey(id.String() + "/" + filename)
+	elements := lo.Compact([]string{entityName, filename, id.String()})
+
+	return ObjectKey(strings.Join(elements, "/"))
 }

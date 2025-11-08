@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package files;
 
-import "google/protobuf/timestamp.proto";
-
 option go_package = "/proto";
 
 service FileStorageService {
@@ -14,21 +12,11 @@ service FileStorageService {
   rpc DownloadLink(DownloadLinkRequest) returns (DownloadLinkResponse);
 }
 
-// Метаданные файла
-message File {
-  int32 id = 1;            // UUID
-  string filename = 2;
-  string content_type = 3;
-  string bucket = 4;
-  string object_key = 5;
-  google.protobuf.Timestamp created_at = 6;
-  google.protobuf.Timestamp uploaded_at = 7;
-}
-
 // Запрос регистрации файла → выдаём URL для загрузки
 message RegisterFileRequest {
   string filename = 1;      // исходное имя (можно пустое)
-  string content_type = 2;  // например "application/pdf"
+  string entity_name = 2;   // название сущности, к которой файл относится (например, document)
+  string content_type = 3;  // например "application/pdf"
 }
 
 message RegisterFileResponse {
