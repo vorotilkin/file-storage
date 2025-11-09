@@ -70,23 +70,50 @@ func (r *Repository) Upload(ctx context.Context, fileID int32) (bool, error) {
 	return result.RowsAffected() > 0, nil
 }
 
-func (r *Repository) ObjectKey(ctx context.Context, fileID int32) (string, error) {
-	sql, args := table.Files.
-		SELECT(
-			table.Files.ObjectKey,
-		).
-		WHERE(table.Files.ID.EQ(postgres.Int(int64(fileID)))).
-		Sql()
-
-	row := r.conn.QueryRow(ctx, sql, args...)
-	dbFile := model.Files{}
-
-	err := row.Scan(&dbFile.ObjectKey)
-	if err != nil {
-		return "", err
+func (r *Repository) ObjectKeys(ctx context.Context, fileIDs []int32) (map[int32]string, error) {
+	if len(fileIDs) == 0 {
+		return nil, nil
 	}
 
-	return dbFile.ObjectKey, nil
+	jetFileIDs := lo.Map(fileIDs, func(id int32, _ int) postgres.Expression {
+		return postgres.Int(int64(id))
+	})
+
+	sql, args := table.Files.
+		SELECT(
+			table.Files.ID,
+			table.Files.ObjectKey,
+		).
+		WHERE(table.Files.ID.IN(jetFileIDs...)).
+		Sql()
+
+	rows, err := r.conn.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	filesURLMap := make(map[int32]string, len(fileIDs))
+
+	for rows.Next() {
+		dbFile := model.Files{}
+
+		err := rows.Scan(
+			&dbFile.ID,
+			&dbFile.ObjectKey,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		filesURLMap[dbFile.ID] = dbFile.ObjectKey
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return filesURLMap, nil
 }
 
 func NewRepository(conn *database.Database) *Repository {

@@ -9,7 +9,7 @@ import (
 
 type FilesRepository interface {
 	Create(ctx context.Context, file models.CreateFileRequest) (models.CreateFileResponse, error)
-	ObjectKey(ctx context.Context, fileID int32) (string, error)
+	ObjectKeys(ctx context.Context, fileIDs []int32) (map[int32]string, error)
 }
 
 type S3Service interface {
@@ -52,17 +52,25 @@ func (s *FileStorageServer) RegisterFile(ctx context.Context, request *proto.Reg
 }
 
 func (s *FileStorageServer) DownloadLink(ctx context.Context, request *proto.DownloadLinkRequest) (*proto.DownloadLinkResponse, error) {
-	objectKey, err := s.filesRepo.ObjectKey(ctx, request.GetFileId())
+	objectKeyMap, err := s.filesRepo.ObjectKeys(ctx, request.GetFileIds())
 	if err != nil {
 		return nil, err
 	}
 
-	url, err := s.s3Service.PresignGet(ctx, objectKey)
-	if err != nil {
-		return nil, err
+	fileURLsMap := make(map[int32]string, len(objectKeyMap))
+
+	for fileID, objectKey := range objectKeyMap {
+		url, err := s.s3Service.PresignGet(ctx, objectKey)
+		if err != nil {
+			return nil, err
+		}
+
+		fileURLsMap[fileID] = url
 	}
 
-	return &proto.DownloadLinkResponse{Url: url}, nil
+	return &proto.DownloadLinkResponse{
+		FileUrlsMap: fileURLsMap,
+	}, nil
 }
 
 func NewFileStorageServer(
